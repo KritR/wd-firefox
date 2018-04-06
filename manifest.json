@@ -1,0 +1,25 @@
+{
+  "manifest_version": 2,
+  "name": "wd-ff",
+  "version": "1.0",
+
+  "description": "Allows the jumping to custom urls using keywords.",
+
+  "omnibox": { "keyword" : "wd" },
+
+  "applications": {
+      "gecko": {
+        "id": "krdevmail@gmail.com"
+      }
+  },
+
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+
+  "background": {
+    "scripts": ["warp-drive.js"]
+  }
+
+}
