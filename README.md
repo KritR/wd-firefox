@@ -5,6 +5,7 @@ This add in allows users to set custom url warp points based on simple keywords 
 - Add a warp point
 
 `wd add <point> <url>`
+
 If no url is specified, it defaults to the current one.
 
 - Go to a warp point
