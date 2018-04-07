@@ -54,10 +54,20 @@ function tokenize(string) {
   return string.replace(/ +(?= )/g,'').trim().split(" ");
 }
 
+function makeURL(string) {
+  const protocol = /(^\w+:\/\/).*/
+  if(!protocol.test(string)) {
+    string = 'https://' + string
+  }
+  return string
+}
+
 async function addWarpPoint(point, url) {
   if(url == null) {
     const [tab] = await browser.tabs.query({currentWindow: true, active:true});
     url = tab.url;
+  } else {
+    url = makeURL(url)
   }
   const store = await browser.storage.sync.get();
   store[point] = url;
