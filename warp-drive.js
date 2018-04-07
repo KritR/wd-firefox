@@ -1,89 +1,87 @@
+const commands = [{name: 'add', description: 'Add a New Warp Point | wd add <point> <optional url>'}, {name: 'rm', description: 'Delete a Warp Point | wd rm <point>'}];
+const defaultSuggestion = 'wd [command]? [url]? [point] (commands: add|rm)';
+const blankRegexp = /^\s*$/;
+
 browser.omnibox.setDefaultSuggestion({
-  description: `wd [command] [point]
-    (commands: add|rm|ls|path|show|help)`
+  description: defaultSuggestion
 });
 
-// Eventually add suggestions based on input
 browser.omnibox.onInputChanged.addListener((text, addSuggestions) => {
+  const getStore = browser.storage.sync.get();
+  const textRegexp = new RegExp('^' + text.trim(), 'i');
+  const blankInput = blankRegexp.test(text);
+  const commandSuggestions = commands
+    .filter(command => textRegexp.test(command.name)||blankInput)
+    .map(command => {
+      return {content: command.name, description: command.description}
+    });
+  getStore.then(store => {
+    const warpSuggestions = Object.keys(store)
+      .filter(key => textRegexp.test(key)||blankInput)
+      .map(key => {
+        return {content: key, description: 'wd ' + key + ' --> ' + store[key]}
+      });
+    const suggestions = commandSuggestions.concat(warpSuggestions);
+    addSuggestions(suggestions);
+  });
 });
+
 browser.omnibox.onInputEntered.addListener((text, disposition) => {
-  let input = text.split(" ")
-  let currentTab = browser.tabs.getCurrent()
-  let getStore = browser.storage.sync.get();
-  console.log(text);
+  let input = tokenize(text);
+  const currentTab = browser.tabs.getCurrent();
+  const getStore = browser.storage.sync.get();
   switch(input[0]) {
     case "add":
-      if(input.length > 2) {
-        let point = input[1]
-        let url = input[2]
-        getStore.then(store => {
-          store = {} || store;
-          store[point] = url;
-          browser.storage.sync.set(store)
-        });
-      } 
-      else if(input.length == 2) {
-        let point = input[1]
-        currentTab.then(url => {
-          getStore.then(store => {
-            store[point] = url;
-            browser.storage.sync.set(store)
-          });
-        });
-      }
-      else {
-        console.log('add takes 1 or 2 inputs. a warp point name and an optional url');
-      }
+      let point = input[1]
+      let url = input[2]
+      addWarpPoint(point, url);
       break;
     case "rm":
       if(input.length > 1 ) {
-        getStore.then(store => {
-          input.shift().forEach((point) => {
-            delete store[point];
-          });
-          browser.storage.sync.set(store);
-        });
+        input.shift();
+        input.forEach(point => browser.storage.sync.remove(point));
       } 
-      break;
-    case "ls":
-    case "list":
-      getStore.then( store => {
-        console.log('Warps points include: ' + Object.keys(store))
-      });
-      break;
-    case "show":
-      if(input.length > 1) {
-        let url = input[1];
-        getStore.then( store => { 
-         console.log(Object.keys(warps).find(key => object[key] === url) );
-        });
-      } else {
-        currentTab.then(url => {
-          getStore.then( store => { 
-           console.log(Object.keys(warps).find(key => object[key] === url));
-          });
-        });
-      }
-      break;
-    case "path":
-      if(input.length > 1) {
-        let point = input[1];
-        getStore.then( store => {
-          let url = store[point] || 'none';
-          console.log('Warp Point ' + point + ' is set to ' + url);
-        });
-      }
       break;
     default:
       if(input.length > 0) {
         let point = input[0];
-        getStore.then( store => {
-          let url = store[point];
-          if(url != null) {
-            browser.tabs.update({url});
-          }
-        });
+        openWarpPoint(point, disposition);
       }
   }
 });
 
+function tokenize(string) {
+  return string.replace(/ +(?= )/g,'').trim().split(" ");
+}
+
+async function addWarpPoint(point, url) {
+  if(url == null) {
+    const [tab] = await browser.tabs.query({currentWindow: true, active:true});
+    url = tab.url;
+  }
+  const store = await browser.storage.sync.get();
+  store[point] = url;
+  browser.storage.sync.set(store);
+}
+
+async function openWarpPoint(point, disposition) {
+  const store = await browser.storage.sync.get();
+  const url = store[point] 
+  if(url != null) {
+    openURL(url, disposition);
+  }
+}
+
+function openURL(url, disposition) {
+  switch (disposition) {
+  case "currentTab":
+    browser.tabs.update({url});
+    break;
+  case "newForegroundTab":
+    browser.tabs.create({url});
+    break;
+  case "newBackgroundTab":
+    browser.tabs.create({url, active: false});
+    break;
+  }
+}
