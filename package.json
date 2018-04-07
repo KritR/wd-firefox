@@ -1,0 +1,13 @@
+{
+  "name": "wd-ff",
+  "version": "1.0.0",
+  "description": "A firefox add-on to jump to keyworded links.",
+  "main": "index.js",
+  "repository": "git@github.com:KritR/wd-firefox.git",
+  "author": "Krithik Rao <krdevmail@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "devDependencies": {
+    "web-ext": "^2.6.0"
+  }
+}
