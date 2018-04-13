@@ -1,5 +1,5 @@
 const commands = [{name: 'add', description: 'Add a New Warp Point | wd add <point> <optional url>'}, {name: 'rm', description: 'Delete a Warp Point | wd rm <point>'}];
-const defaultSuggestion = 'wd [command]? [url]? [point] (commands: add|rm)';
+const defaultSuggestion = 'wd [add|rm]? [point] [url]?';
 const blankRegexp = /^\s*$/;
 
 browser.omnibox.setDefaultSuggestion({

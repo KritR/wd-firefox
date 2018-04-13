@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "wd-ff",
-  "version": "1.0",
+  "version": "1.2",
 
   "description": "Allows the jumping to custom urls using keywords.",
 
