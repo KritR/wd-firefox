@@ -7,30 +7,13 @@ browser.omnibox.setDefaultSuggestion({
 });
 
 browser.omnibox.onInputChanged.addListener((text, addSuggestions) => {
-  const getStore = browser.storage.sync.get();
-  const textRegexp = new RegExp('^' + text.trim(), 'i');
-  const blankInput = blankRegexp.test(text);
-  const commandSuggestions = commands
-    .filter(command => textRegexp.test(command.name)||blankInput)
-    .map(command => {
-      return {content: command.name, description: command.description}
-    });
-  getStore.then(store => {
-    const warpSuggestions = Object.keys(store)
-      .filter(key => textRegexp.test(key)||blankInput)
-      .map(key => {
-        return {content: key, description: 'wd ' + key + ' --> ' + store[key]}
-      });
-    const suggestions = commandSuggestions.concat(warpSuggestions);
-    addSuggestions(suggestions);
-  });
+  createSuggestions(text).then(suggestions => addSuggestions(suggestions));
 });
 
 browser.omnibox.onInputEntered.addListener((text, disposition) => {
   let input = tokenize(text);
-  const currentTab = browser.tabs.getCurrent();
-  const getStore = browser.storage.sync.get();
-  switch(input[0]) {
+  let command = input[0];
+  switch(command) {
     case "add":
       let point = input[1]
       let url = input[2]
@@ -39,7 +22,7 @@ browser.omnibox.onInputEntered.addListener((text, disposition) => {
     case "rm":
       if(input.length > 1 ) {
         input.shift();
-        input.forEach(point => browser.storage.sync.remove(point));
+        input.forEach(removeWarpPoint);
       } 
       break;
     default:
@@ -74,12 +57,33 @@ async function addWarpPoint(point, url) {
   browser.storage.sync.set(store);
 }
 
+async function removeWarpPoint(point) {
+  browser.storage.sync.remove(point);
+}
+
 async function openWarpPoint(point, disposition) {
   const store = await browser.storage.sync.get();
-  const url = store[point] 
+  const url = store[point]; 
   if(url != null) {
     openURL(url, disposition);
   }
+}
+
+async function createSuggestions(text) {
+  const store = await browser.storage.sync.get();
+  const blankInput = blankRegexp.test(text);
+  const commandSuggestions = commands
+    .filter(command => command.name.toLowerCase().startsWith(text.toLowerCase()) || blankInput)
+    .map(command => {
+      return {content: command.name, description: command.description}
+    });
+  const warpSuggestions = Object.keys(store)
+    .filter(key => key.toLowerCase().startsWith(text.toLowerCase()) || blankInput)
+    .map(key => {
+      return {content: key, description: 'wd ' + key + ' --> ' + store[key]}
+    });
+  const suggestions = commandSuggestions.concat(warpSuggestions);
+  return suggestions
 }
 
 function openURL(url, disposition) {
