@@ -1,6 +1,9 @@
 # WarpDrive Firefox
 This add in allows users to set custom url warp points based on simple keywords and is inspired by [wd](https://github.com/mfaerevaag/wd) the zsh command.
 
+## Download
+https://addons.mozilla.org/en-US/firefox/addon/warpdrive-ff/
+
 ## Usage
 - Add a warp point
 
