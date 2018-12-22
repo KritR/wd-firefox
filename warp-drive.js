@@ -1,3 +1,4 @@
+var currentTabID = 0;
 const commands = [{name: 'add', description: 'Add a New Warp Point | wd add <point> <optional url>'}, {name: 'rm', description: 'Delete a Warp Point | wd rm <point>'}, {name: 'list', description: 'List all existing warp points | wd list'}];
 const defaultSuggestion = 'wd [list|add|rm]? [point] [url]?';
 const blankRegexp = /^\s*$/;
@@ -37,6 +38,11 @@ browser.omnibox.onInputEntered.addListener((text, disposition) => {
   }
 });
 
+browser.runtime.onMessage.addListener((msg, sender, response) => {
+  console.log("msg recieved " + currentTabID);
+  browser.tabs.update(currentTabID, {url: msg});
+});
+
 function tokenize(string) {
   return string.replace(/ +(?= )/g,'').trim().split(" ");
 }
@@ -66,8 +72,12 @@ async function removeWarpPoint(point) {
 }
 
 async function showListPage() {
+  
+  const currentTab = await browser.tabs.query({active: true, windowId: browser.windows.WINDOW_ID_CURRENT})
+                            .then(tabs => browser.tabs.get(tabs[0].id));
+  currentTabID = currentTab.id;
   const store = await browser.storage.sync.get();
-  browser.tabs.insertCSS({file: "/wd-list.css"});
+  /* browser.tabs.insertCSS({file: "/wd-list.css"});
   browser.tabs.executeScript({
     code: `
     (function() {
@@ -100,13 +110,14 @@ async function showListPage() {
       document.body.appendChild(pointList);
     })();
     `
-  });
-  /*const listPageData = {
+  });*/
+  const listPageData = {
     type: "detached_panel",
-    url: "wd-list.html",
-    width: 250,
+    url: "wd-list.html?a=1",
+    width: 400,
+    height: 400
   };
-  browser.windows.create(listPageData);*/
+  browser.windows.create(listPageData);
 }
 
 async function openWarpPoint(point, disposition) {

@@ -1,0 +1,26 @@
+html, body, #wd-list {
+  margin: 0;
+  padding: 0;
+  height: auto;
+}
+
+#wd-list {
+  min-width:400px;  /* adjust as per your needs */
+  background-color: white;
+  list-style-type: none;
+  font-family: courier;
+  font-size: small;
+}
+
+#wd-list > li {
+  padding: 2px 10px;
+  background-color: white;
+  border-bottom: 1px solid black;
+  color: black;
+}
+
+#wd-list > li:hover {
+  text-decoration: underline;
+  background-color: rgba(0,0,0, 0.1);
+  cursor: pointer;
+}
