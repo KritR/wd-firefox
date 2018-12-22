@@ -77,47 +77,50 @@ async function showListPage() {
                             .then(tabs => browser.tabs.get(tabs[0].id));
   currentTabID = currentTab.id;
   const store = await browser.storage.sync.get();
-  /* browser.tabs.insertCSS({file: "/wd-list.css"});
-  browser.tabs.executeScript({
-    code: `
-    (function() {
-      const oldList = document.querySelector('#wd-list');
-      if(oldList) {
-        oldList.remove();
-      }
-      const store = ${JSON.stringify(store)};
+  const insertCSS = browser.tabs.insertCSS({file: "/wd-list.css"});
+  insertCSS.then(() => {
+    browser.tabs.executeScript({
+      code: `
+      (function() {
+        const oldList = document.querySelector('#wd-list');
+        if(oldList) {
+          oldList.remove();
+        }
+        const store = ${JSON.stringify(store)};
 
-      const warpPoints = Object.keys(store).sort();
-      const pointList = document.createElement("ul");
+        const warpPoints = Object.keys(store).sort();
+        const pointList = document.createElement("ul");
 
-      pointList.setAttribute("id", "wd-list");
-      for (let point of warpPoints) {
-        const text = document.createTextNode("wd " + point + " \u2192 " + store[point]);
-        const pointNode = document.createElement("li");
-        pointNode.appendChild(text);
-        pointList.appendChild(pointNode);
-        pointNode.onclick = () => {
-          window.location.href = store[point];
-        };
-      }
-      const invisibleCover = document.createElement("div");
-      invisibleCover.setAttribute("id", "wd-invisible-cover");
-      invisibleCover.onclick = () => {
-        pointList.remove();
-        invisibleCover.remove();
-      }
-      document.body.appendChild(invisibleCover);
-      document.body.appendChild(pointList);
-    })();
-    `
-  });*/
-  const listPageData = {
-    type: "detached_panel",
-    url: "wd-list.html?a=1",
-    width: 400,
-    height: 400
-  };
-  browser.windows.create(listPageData);
+        pointList.setAttribute("id", "wd-list");
+        for (let point of warpPoints) {
+          const text = document.createTextNode("wd " + point + " \u2192 " + store[point]);
+          const pointNode = document.createElement("li");
+          pointNode.appendChild(text);
+          pointList.appendChild(pointNode);
+          pointNode.onclick = () => {
+            window.location.href = store[point];
+          };
+        }
+        const invisibleCover = document.createElement("div");
+        invisibleCover.setAttribute("id", "wd-invisible-cover");
+        invisibleCover.onclick = () => {
+          pointList.remove();
+          invisibleCover.remove();
+        }
+        document.body.appendChild(invisibleCover);
+        document.body.appendChild(pointList);
+      })();
+      `
+    })
+  }, () => {
+    const listPageData = {
+      type: "detached_panel",
+      url: "wd-list.html?a=1",
+      width: 400,
+      height: 400
+    };
+    browser.windows.create(listPageData);
+  });
 }
 
 async function openWarpPoint(point, disposition) {
