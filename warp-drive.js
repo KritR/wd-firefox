@@ -1,6 +1,8 @@
-const commands = [{name: 'add', description: 'Add a New Warp Point | wd add <point> <optional url>'}, {name: 'rm', description: 'Delete a Warp Point | wd rm <point>'}];
-const defaultSuggestion = 'wd [add|rm]? [point] [url]?';
+var currentTabID = 0;
+const commands = [{name: 'add', description: 'Add a New Warp Point | wd add <point> <optional url>'}, {name: 'rm', description: 'Delete a Warp Point | wd rm <point>'}, {name: 'list', description: 'List all existing warp points | wd list'}];
+const defaultSuggestion = 'wd [list|add|rm]? [point] [url]?';
 const blankRegexp = /^\s*$/;
+
 
 browser.omnibox.setDefaultSuggestion({
   description: defaultSuggestion
@@ -25,12 +27,20 @@ browser.omnibox.onInputEntered.addListener((text, disposition) => {
         input.forEach(removeWarpPoint);
       } 
       break;
+    case "list":
+      showListPage();
+      break;
     default:
       if(input.length > 0) {
         let point = input[0];
         openWarpPoint(point, disposition);
       }
   }
+});
+
+browser.runtime.onMessage.addListener((msg, sender, response) => {
+  console.log("msg recieved " + currentTabID);
+  browser.tabs.update(currentTabID, {url: msg});
 });
 
 function tokenize(string) {
@@ -59,6 +69,58 @@ async function addWarpPoint(point, url) {
 
 async function removeWarpPoint(point) {
   browser.storage.sync.remove(point);
+}
+
+async function showListPage() {
+  
+  const currentTab = await browser.tabs.query({active: true, windowId: browser.windows.WINDOW_ID_CURRENT})
+                            .then(tabs => browser.tabs.get(tabs[0].id));
+  currentTabID = currentTab.id;
+  const store = await browser.storage.sync.get();
+  const insertCSS = browser.tabs.insertCSS({file: "/wd-list.css"});
+  insertCSS.then(() => {
+    browser.tabs.executeScript({
+      code: `
+      (function() {
+        const oldList = document.querySelector('#wd-list');
+        if(oldList) {
+          oldList.remove();
+        }
+        const store = ${JSON.stringify(store)};
+
+        const warpPoints = Object.keys(store).sort();
+        const pointList = document.createElement("ul");
+
+        pointList.setAttribute("id", "wd-list");
+        for (let point of warpPoints) {
+          const text = document.createTextNode("wd " + point + " \u2192 " + store[point]);
+          const pointNode = document.createElement("li");
+          pointNode.appendChild(text);
+          pointList.appendChild(pointNode);
+          pointNode.onclick = () => {
+            window.location.href = store[point];
+          };
+        }
+        const invisibleCover = document.createElement("div");
+        invisibleCover.setAttribute("id", "wd-invisible-cover");
+        invisibleCover.onclick = () => {
+          pointList.remove();
+          invisibleCover.remove();
+        }
+        document.body.appendChild(invisibleCover);
+        document.body.appendChild(pointList);
+      })();
+      `
+    })
+  }, () => {
+    const listPageData = {
+      type: "detached_panel",
+      url: "wd-list.html?a=1",
+      width: 400,
+      height: 400
+    };
+    browser.windows.create(listPageData);
+  });
 }
 
 async function openWarpPoint(point, disposition) {
