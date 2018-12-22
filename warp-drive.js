@@ -81,7 +81,8 @@ async function createSuggestions(text) {
     .filter(key => key.toLowerCase().startsWith(text.toLowerCase()) || blankInput)
     .map(key => {
       return {content: key, description: 'wd ' + key + ' --> ' + store[key]}
-    });
+    })
+    .sort();
   const suggestions = commandSuggestions.concat(warpSuggestions);
   return suggestions
 }
