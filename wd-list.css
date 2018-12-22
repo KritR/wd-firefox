@@ -8,15 +8,15 @@
 }
 #wd-list {
   padding: 0;
-  position: fixed;
-  top:20%;
-  left:50%;
-  min-width:400px;  /* adjust as per your needs */
+  position: fixed !important;
+  top:20% !important;
+  left:50% !important;
+  min-width:400px !important;
   padding: 5px;
   background-color: white;
   border: 2px solid black;
   outline: 1px solid white;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) !important;
   list-style-type: none;
   z-index: 99999;
   font-family: courier;
