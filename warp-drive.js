@@ -1,6 +1,7 @@
-const commands = [{name: 'add', description: 'Add a New Warp Point | wd add <point> <optional url>'}, {name: 'rm', description: 'Delete a Warp Point | wd rm <point>'}];
-const defaultSuggestion = 'wd [add|rm]? [point] [url]?';
+const commands = [{name: 'add', description: 'Add a New Warp Point | wd add <point> <optional url>'}, {name: 'rm', description: 'Delete a Warp Point | wd rm <point>'}, {name: 'list', description: 'List all existing warp points | wd list'}];
+const defaultSuggestion = 'wd [list|add|rm]? [point] [url]?';
 const blankRegexp = /^\s*$/;
+
 
 browser.omnibox.setDefaultSuggestion({
   description: defaultSuggestion
@@ -24,6 +25,9 @@ browser.omnibox.onInputEntered.addListener((text, disposition) => {
         input.shift();
         input.forEach(removeWarpPoint);
       } 
+      break;
+    case "list":
+      showListPage();
       break;
     default:
       if(input.length > 0) {
@@ -59,6 +63,50 @@ async function addWarpPoint(point, url) {
 
 async function removeWarpPoint(point) {
   browser.storage.sync.remove(point);
+}
+
+async function showListPage() {
+  const store = await browser.storage.sync.get();
+  browser.tabs.insertCSS({file: "/wd-list.css"});
+  browser.tabs.executeScript({
+    code: `
+    (function() {
+      const oldList = document.querySelector('#wd-list');
+      if(oldList) {
+        oldList.remove();
+      }
+      const store = ${JSON.stringify(store)};
+
+      const warpPoints = Object.keys(store).sort();
+      const pointList = document.createElement("ul");
+
+      pointList.setAttribute("id", "wd-list");
+      for (let point of warpPoints) {
+        const text = document.createTextNode("wd " + point + " \u2192 " + store[point]);
+        const pointNode = document.createElement("li");
+        pointNode.appendChild(text);
+        pointList.appendChild(pointNode);
+        pointNode.onclick = () => {
+          window.location.href = store[point];
+        };
+      }
+      const invisibleCover = document.createElement("div");
+      invisibleCover.setAttribute("id", "wd-invisible-cover");
+      invisibleCover.onclick = () => {
+        pointList.remove();
+        invisibleCover.remove();
+      }
+      document.body.appendChild(invisibleCover);
+      document.body.appendChild(pointList);
+    })();
+    `
+  });
+  /*const listPageData = {
+    type: "detached_panel",
+    url: "wd-list.html",
+    width: 250,
+  };
+  browser.windows.create(listPageData);*/
 }
 
 async function openWarpPoint(point, disposition) {
